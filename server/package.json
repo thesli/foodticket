@@ -1,0 +1,7 @@
+{
+    "name":"foodTicket",
+    "author":"SliverSniper",
+    "dependencies":{
+        "socket.io":"*"
+    }
+}
