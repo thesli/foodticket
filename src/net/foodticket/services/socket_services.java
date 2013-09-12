@@ -3,9 +3,12 @@ package net.foodticket.services;
 import android.annotation.TargetApi;
 import android.app.Service;
 import android.content.Intent;
+import android.os.Binder;
 import android.os.Build;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.Message;
+import android.os.Messenger;
 import android.os.Vibrator;
 import android.util.Log;
 import android.widget.Toast;
@@ -20,22 +23,37 @@ import org.json.JSONObject;
  * Created by Administrator on 9/11/13.
  */
 public class socket_services extends Service {
+    public final IBinder mBinder = new myBinder();
+    Messenger msger;
+    Message msg;
+    Handler h;
 
     @Override
     public IBinder onBind(Intent intent) {
-        return null;
+        l("onBinded");
+
+//        Toast.makeText(getApplicationContext(),"onBind",Toast.LENGTH_LONG).show();
+        init(intent);
+        return mBinder;
     }
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        init();
+//        init();
         return START_STICKY;
     }
 
-    private void init() {
+    public SocketIOClient clt;
+
+    private void init(Intent intent) {
+        msger = intent.getParcelableExtra("msger");
+        msg = Message.obtain(h,1,1,1,"abcde");
+        String t = msg.obj.toString();
+        l(t);
         SocketIOClient.connect("http://192.168.1.111:3060",new ConnectCallback() {
             @Override
             public void onConnectCompleted(Exception e, SocketIOClient client) {
+                clt = client;
                 if(e!=null){
                     e.printStackTrace();
                     return;
@@ -43,35 +61,35 @@ public class socket_services extends Service {
                 DisconnectCallback disCb = new DisconnectCallback() {
                     @Override
                     public void onDisconnect(Exception e) {
-                        toastText("disconnected");
+//                        toastText("disconnected");
                         l("disconnected");
                     }
                 };
                 StringCallback strCb = new StringCallback() {
                     @Override
                     public void onString(String s, Acknowledge acknowledge) {
-                        toastText("onString");
+//                        toastText("onString");
                         l(s.toString(),acknowledge.toString());
                     }
                 };
                 ReconnectCallback recCb = new ReconnectCallback() {
                     @Override
                     public void onReconnect() {
-                        toastText("reconnected");
+//                        toastText("reconnected");
                         l("reconnected");
                     }
                 };
                 JSONCallback jsonCb = new JSONCallback() {
                     @Override
                     public void onJSON(JSONObject jsonObject, Acknowledge acknowledge) {
-                        toastText("onJson");
+//                        toastText("onJson");
                         l(jsonObject.toString(),acknowledge.toString());
                     }
                 };
                 ErrorCallback errCb = new ErrorCallback() {
                     @Override
                     public void onError(String s) {
-                        toastText("Error happened");
+//                        toastText("Error happened");
                         l(s.toString());
                     }
                 };
@@ -97,14 +115,14 @@ public class socket_services extends Service {
                 client.addListener("helloWorld",new EventCallback() {
                     @Override
                     public void onEvent(String s, JSONArray jsonArray, Acknowledge acknowledge) {
-                        Toast.makeText(getApplicationContext(),"helloWorld",Toast.LENGTH_LONG).show();
+//                        Toast.makeText(getApplicationContext(),"helloWorld",Toast.LENGTH_LONG).show();
                     }
                 });
 
                 client.addListener("fiveSecond",new EventCallback() {
                     @Override
                     public void onEvent(String s, JSONArray jsonArray, Acknowledge acknowledge) {
-                        toastText("five Second Passed,Go working");
+//                        toastText("five Second Passed,Go working");
                     }
                 });
 
@@ -126,6 +144,8 @@ public class socket_services extends Service {
     private void toastText(String text) {
         Toast.makeText(getApplicationContext(), text, Toast.LENGTH_LONG).show();
     }
+
+
 
     /*DEBUG Function*/
     String DEBUGTAG = "socket_servicesDEBUGTAG";
@@ -151,5 +171,24 @@ public class socket_services extends Service {
         } else {
             l(s);
         }
+    }
+
+    public class myBinder extends Binder {
+        public socket_services getService(){
+            return socket_services.this;
+        }
+    }
+
+    public void sendMsg() {
+        JSONArray jsonArray = new JSONArray();
+        JSONObject jsonObject = new JSONObject();
+        try {
+            jsonObject.put("fuck",12);
+            jsonArray.put(jsonObject);
+            l(jsonArray.toString());
+        } catch (JSONException e1) {
+            e1.printStackTrace();
+        }
+        clt.emit("return", jsonArray);
     }
 }

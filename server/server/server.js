@@ -8,9 +8,15 @@ io.sockets.on("connection", function(s) {
   s.emit("hello", {
     "what": "is this"
   });
-  return setInterval(function() {
+  setInterval(function() {
     return ten(s);
   }, 5000);
+  s.on("return", function(data) {
+    return console.log(data);
+  });
+  return s.on("whatfuckthe", function(data) {
+    return console.log(data);
+  });
 });
 
 ten = function(socket) {

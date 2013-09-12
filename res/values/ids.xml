@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <item name="startSocketBtn" type="id"/>
+    <item name="sendMsgBtn" type="id"/>
+    <item name="qrImgView" type="id"/>
+    <item name="qrImgBmp" type="id"/>
 </resources>

@@ -1,6 +1,5 @@
 io = require("socket.io").listen(3060)
 
-
 io.sockets.on(
   "connection",
   (s)->
@@ -10,6 +9,14 @@ io.sockets.on(
       ->
         ten(s)
       5000
+    )
+    s.on("return",
+      (data)->
+        console.log(data)
+    )
+    s.on("whatfuckthe",
+      (data)->
+        console.log(data)
     )
 )
 
