@@ -9,20 +9,25 @@ import android.os.Handler;
 import android.os.IBinder;
 import android.os.Message;
 import android.os.Messenger;
+import android.os.RemoteException;
 import android.os.Vibrator;
 import android.util.Log;
 import android.widget.Toast;
 
 import com.koushikdutta.async.http.socketio.*;
 
+import net.foodticket.R;
+
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+
+
 /**
  * Created by Administrator on 9/11/13.
  */
-public class socket_services extends Service {
+public class Socket_Services extends Service {
     public final IBinder mBinder = new myBinder();
     Messenger msger;
     Message msg;
@@ -33,7 +38,11 @@ public class socket_services extends Service {
         l("onBinded");
 
 //        Toast.makeText(getApplicationContext(),"onBind",Toast.LENGTH_LONG).show();
-        init(intent);
+        try {
+            init(intent);
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
         return mBinder;
     }
 
@@ -45,11 +54,11 @@ public class socket_services extends Service {
 
     public SocketIOClient clt;
 
-    private void init(Intent intent) {
+    private void init(Intent intent) throws RemoteException {
+        h = new Handler(getApplicationContext().getMainLooper());
         msger = intent.getParcelableExtra("msger");
-        msg = Message.obtain(h,1,1,1,"abcde");
-        String t = msg.obj.toString();
-        l(t);
+
+//        String t = msg.obj.toString();
         SocketIOClient.connect("http://192.168.1.111:3060",new ConnectCallback() {
             @Override
             public void onConnectCompleted(Exception e, SocketIOClient client) {
@@ -103,49 +112,11 @@ public class socket_services extends Service {
                 /*Initiatie the CallBacks*/
 
                 /*Listeners of the Event*/
-                client.addListener("hello",new EventCallback() {
-                    @Override
-                    public void onEvent(String s, JSONArray jsonArray, Acknowledge acknowledge) {
-                        Vibrator v = (Vibrator) getSystemService(VIBRATOR_SERVICE);
-                        v.vibrate(1000);
-                        l("hello triggered");
-                    }
-                });
+                Socket_Listeners socket_listeners = new Socket_Listeners(client,h,msger,getApplicationContext());
 
-                client.addListener("helloWorld",new EventCallback() {
-                    @Override
-                    public void onEvent(String s, JSONArray jsonArray, Acknowledge acknowledge) {
-//                        Toast.makeText(getApplicationContext(),"helloWorld",Toast.LENGTH_LONG).show();
-                    }
-                });
-
-                client.addListener("fiveSecond",new EventCallback() {
-                    @Override
-                    public void onEvent(String s, JSONArray jsonArray, Acknowledge acknowledge) {
-//                        toastText("five Second Passed,Go working");
-                    }
-                });
-
-                /*Listeners of the Event*/
-                JSONArray jsonArray = new JSONArray();
-                JSONObject jsonObject = new JSONObject();
-                try {
-                    jsonObject.put("fuck",12);
-                    jsonArray.put(jsonObject);
-                    l(jsonArray.toString());
-                } catch (JSONException e1) {
-                    e1.printStackTrace();
-                }
-                client.emit("return",jsonArray);
             }
         },new Handler());
     }
-
-    private void toastText(String text) {
-        Toast.makeText(getApplicationContext(), text, Toast.LENGTH_LONG).show();
-    }
-
-
 
     /*DEBUG Function*/
     String DEBUGTAG = "socket_servicesDEBUGTAG";
@@ -174,8 +145,8 @@ public class socket_services extends Service {
     }
 
     public class myBinder extends Binder {
-        public socket_services getService(){
-            return socket_services.this;
+        public Socket_Services getService(){
+            return Socket_Services.this;
         }
     }
 

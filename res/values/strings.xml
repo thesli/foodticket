@@ -3,4 +3,5 @@
     <string name="app_name">main_activity</string>
     <string name="startSocketStr">START SOCKET</string>
     <string name="sengMsgStr">send Message</string>
+    <string name="abc">abcisthis</string>
 </resources>

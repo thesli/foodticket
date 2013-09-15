@@ -40,7 +40,17 @@
                    android:scaleType="centerInside"
                    ></ImageView>
                   </LinearLayout>
-
+    <LinearLayout android:id="@+id/third"
+                  android:layout_width="fill_parent"
+                  android:layout_below="@id/second"
+                  android:layout_height="wrap_content"
+                  android:orientation="vertical"
+                  android:gravity="center">
+        <FrameLayout android:id="@id/qrCamFrame"
+                     android:layout_width="200px"
+                     android:layout_height="200px"
+                     ></FrameLayout>
+                  </LinearLayout>
 
 </RelativeLayout>
 

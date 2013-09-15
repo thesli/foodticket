@@ -25,7 +25,7 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-        <service android:name=".services.socket_services">
+        <service android:name=".services.Socket_Services">
 
         </service>
     </application>

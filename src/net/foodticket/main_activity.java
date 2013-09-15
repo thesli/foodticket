@@ -6,9 +6,9 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.pm.ActivityInfo;
 import android.graphics.Bitmap;
-import android.graphics.Color;
-import android.net.Uri;
+import android.hardware.Camera;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
@@ -20,18 +20,21 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.zxing.BarcodeFormat;
-import com.google.zxing.Writer;
-import com.google.zxing.WriterException;
-import com.google.zxing.common.BitMatrix;
-import com.google.zxing.qrcode.QRCodeWriter;
-
-import net.foodticket.services.socket_services;
+import net.foodticket.QR_Generator.QR_generator;
+import net.foodticket.QR_Camera.CameraPreview;
+import net.foodticket.QR_Camera.QRCam;
+import net.foodticket.services.Socket_Services;
+import net.sourceforge.zbar.ImageScanner;
 
 public class main_activity extends Activity {
+    Camera mCam;
+    ImageScanner scanner;
+    TextView scanText;
     Button startSocketBtn;
     Button sendMsg;
     Intent servicesIntent;
@@ -39,6 +42,10 @@ public class main_activity extends Activity {
     ImageView mImageView;
     Messenger msger;
     Handler msgerHandler;
+    private FrameLayout QR_frame;
+    private boolean previewing;
+    CameraPreview cameraPreview;
+    private CameraPreview preview;
 
     /**
      * Called when the activity is first created.
@@ -49,8 +56,13 @@ public class main_activity extends Activity {
         super.onCreate(savedInstanceState);
         setFullScreen();
         setContentView(R.layout.main_layout);
+        setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         init();
         setClickListeners();
+    }
+
+    static {
+        System.loadLibrary("iconv");
     }
 
     private void setFullScreen() {
@@ -58,29 +70,38 @@ public class main_activity extends Activity {
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
     }
 
+    @TargetApi(Build.VERSION_CODES.CUPCAKE)
     private void init() {
-        startSocketBtn = (Button) findViewById(R.id.startSocketBtn);
-        sendMsg = (Button) findViewById(R.id.sendMsgBtn);
-        mImageView = (ImageView) findViewById(R.id.qrImgView);
+        setViews();
+        final QR_generator qr_generator = new QR_generator(mBitmap, mImageView);
+        QRCam qrCam = new QRCam(mCam, scanner, scanText);
+        cameraPreview = new CameraPreview(this,mCam,qrCam.previewCb,null);
         msgerHandler = new Handler(new Handler.Callback() {
             @Override
             public boolean handleMessage(Message message) {
-                l(String.valueOf(message.what));
-                Toast.makeText(getApplicationContext(),message.what,Toast.LENGTH_LONG).show();
+                l(String.valueOf(message.obj.toString()));
+                qr_generator.generateQR(message.obj.toString());
                 return true;
             }
         });
         msger = new Messenger(msgerHandler);
-        generateQR("Hello");
+        qr_generator.generateQR("hello fucking World");
+        preview = new CameraPreview(getApplicationContext(),mCam, qrCam.previewCb,null);
     }
 
-    private socket_services s;
+    private void setViews() {
+        startSocketBtn = (Button) findViewById(R.id.startSocketBtn);
+        sendMsg = (Button) findViewById(R.id.sendMsgBtn);
+        mImageView = (ImageView) findViewById(R.id.qrImgView);
+        QR_frame = (FrameLayout) findViewById(R.id.qrCamFrame);
+    }
+
+    private Socket_Services s;
     private ServiceConnection mConnection = new ServiceConnection() {
         @Override
         public void onServiceConnected(ComponentName componentName, IBinder iBinder) {
-            s = ((socket_services.myBinder)iBinder).getService();
+            s = ((Socket_Services.myBinder) iBinder).getService();
         }
-
         @Override
         public void onServiceDisconnected(ComponentName componentName) {
 
@@ -91,8 +112,8 @@ public class main_activity extends Activity {
         startSocketBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                servicesIntent = new Intent(getApplicationContext(), socket_services.class);
-                servicesIntent.putExtra("msger",msger);
+                servicesIntent = new Intent(getApplicationContext(), Socket_Services.class);
+                servicesIntent.putExtra("msger", msger);
                 bindService(servicesIntent, mConnection, Context.BIND_AUTO_CREATE);
                 l("SocketServices started");
             }
@@ -109,7 +130,7 @@ public class main_activity extends Activity {
     @Override
     protected void onResume() {
         super.onResume();
-        bindService(new Intent(getApplicationContext(), socket_services.class), mConnection, Context.BIND_AUTO_CREATE);
+//        bindService(new Intent(getApplicationContext(), Socket_Services.class), mConnection, Context.BIND_AUTO_CREATE);
 //        Toast.makeText(getApplicationContext(),"the activity is resumed",Toast.LENGTH_LONG).show();
     }
 
@@ -123,26 +144,6 @@ public class main_activity extends Activity {
     protected void onPause() {
         super.onPause();
         unbindService(mConnection);
-    }
-
-    public void generateQR(String data){
-        Writer writer = new QRCodeWriter();
-        String finaldata = Uri.encode(data, "ISO-8559-1");
-        try {
-            int width = 150;
-            BitMatrix bm = writer.encode(finaldata, BarcodeFormat.QR_CODE, width, width);
-            mBitmap = Bitmap.createBitmap(width, width, Bitmap.Config.ARGB_8888);
-            for (int i = 0; i < width; i++) {
-                for (int j = 0; j < width; j++) {
-                    mBitmap.setPixel(i, j, bm.get(i, j) ? Color.BLACK : Color.WHITE);
-                }
-            }
-        } catch (WriterException e) {
-            e.printStackTrace();
-        }
-        if(mBitmap != null){
-            mImageView.setImageBitmap(mBitmap);
-        }
     }
 
     /*DEBUG Function*/

@@ -4,4 +4,6 @@
     <item name="sendMsgBtn" type="id"/>
     <item name="qrImgView" type="id"/>
     <item name="qrImgBmp" type="id"/>
+    <item name="abc" type="id">123</item>
+    <item name="qrCamFrame" type="id"/>
 </resources>
